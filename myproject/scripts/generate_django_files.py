@@ -1,73 +1,127 @@
 import yaml
 import os
 
+CONFIG_PATH = "config.yaml"
+APP_NAME = "your_app"  # Djangoアプリ名
+TEMPLATE_DIR = f"{APP_NAME}/templates"
+VIEW_DIR = f"{APP_NAME}/views"
+URLS_PATH = f"{APP_NAME}/urls.py"
+
 # 設定ファイルを読み込む
-CONFIG_PATH = "config/config.yaml"
 with open(CONFIG_PATH, "r", encoding="utf-8") as file:
     config = yaml.safe_load(file)
 
-# Djangoファイルを新規作成する
+url_patterns = []
+
 for table in config["tables"]:
-    model_name = table["name"].lower()
-    view_file = f"your_app/views/{model_name}_views.py"
-    template_dir = f"your_app/templates/{model_name}"
+    table_name = table["name"].lower()
+    title = table["title"]
+    search_conditions = table["search_conditions"]
+    columns = table["columns"]
 
-    # フォルダ作成
-    os.makedirs(template_dir, exist_ok=True)
+    os.makedirs(f"{TEMPLATE_DIR}/{table_name}", exist_ok=True)
+    os.makedirs(VIEW_DIR, exist_ok=True)
 
-    # 検索フォーム（search.html）
-    search_form_html = f"""<h2>{table['title']} - 検索</h2>
-<form action="/{model_name}/list/" method="GET">
+    # --- search.html の作成 ---
+    search_html = f"""<h2>{title} - 検索</h2>
+<form action="/{table_name}/list/" method="GET">
 """
-    if any(cond["type"] == "month_range" for cond in table["search_conditions"]):
-        search_form_html += """<label>開始月: <input type="month" name="start_month"></label>
+
+    if "month_range" in search_conditions:
+        search_html += """<label>開始月: <input type="month" name="start_month"></label>
 <label>終了月: <input type="month" name="end_month"></label>
 """
-    if any(cond["type"] == "day_range" for cond in table["search_conditions"]):
-        search_form_html += """<label>開始日: <input type="date" name="start_date"></label>
+
+    if "day_range" in search_conditions:
+        search_html += """<label>開始日: <input type="date" name="start_date"></label>
 <label>終了日: <input type="date" name="end_date"></label>
 """
-    if any(cond["type"] == "customer_id" for cond in table["search_conditions"]):
-        search_form_html += """<label>顧客番号: <input type="text" name="customer_id"></label>
+
+    if "customer_id" in search_conditions:
+        search_html += """<label>顧客番号: <input type="text" name="customer_id"></label>
 """
-    search_form_html += """<button type="submit">検索</button>
+
+    search_html += """<button type="submit">検索</button>
 </form>
 """
-    with open(f"{template_dir}/search.html", "w", encoding="utf-8") as f:
-        f.write(search_form_html)
 
-    # 一覧ページ（list.html）
-    column_headers = "".join([f"<th>{col['title']}</th>\n" for col in table["columns"]])
-    list_html = f"""<h2>{table['title']} - 一覧</h2>
+    with open(f"{TEMPLATE_DIR}/{table_name}/search.html", "w", encoding="utf-8") as f:
+        f.write(search_html)
+
+    # --- list.html の作成 ---
+    list_html = f"""<h2>{title} - 一覧</h2>
 <table border="1">
-<tr>
-{column_headers}
-</tr>
-{{% for item in data %}}
-<tr>
-""" + "".join([f"<td>{{{{ item.{col['field']} }}}}</td>\n" for col in table["columns"]]) + """
-</tr>
-{% empty %}
-<tr><td colspan="5">データがありません</td></tr>
-{% endfor %}
+    <thead>
+        <tr>
+"""
+
+    for column in columns:
+        list_html += f"            <th>{column['title']}</th>\n"
+
+    list_html += "        </tr>\n    </thead>\n    <tbody>\n        {% for row in data %}\n        <tr>\n"
+
+    for column in columns:
+        list_html += f"            <td>{{{{ row.{column['field']} }}}}</td>\n"
+
+    list_html += """        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 """
-    with open(f"{template_dir}/list.html", "w", encoding="utf-8") as f:
+
+    with open(f"{TEMPLATE_DIR}/{table_name}/list.html", "w", encoding="utf-8") as f:
         f.write(list_html)
 
-    # Djangoビュー（views.py）
-    views_code = f"""from django.shortcuts import render
-from django.db.models import Sum
-from .models import {table["name"]}
+    # --- views.py の作成 ---
+    view_code = f"""from django.shortcuts import render
+from .models import {table['name']}  # 既存のモデルを使用
 
-def {model_name}_search(request):
-    return render(request, '{model_name}/search.html')
+def {table_name}_list(request):
+    filters = {{}}
 
-def {model_name}_list(request):
-    data = {table["name"]}.objects.all()
-    return render(request, '{model_name}/list.html', {{ 'data': data }})
 """
-    with open(view_file, "w", encoding="utf-8") as f:
-        f.write(views_code)
 
-print("Djangoファイルの生成が完了しました！")
+    if "month_range" in search_conditions:
+        view_code += """    if request.GET.get("start_month") and request.GET.get("end_month"):
+        filters["order_date__year__gte"], filters["order_date__month__gte"] = map(int, request.GET["start_month"].split("-"))
+        filters["order_date__year__lte"], filters["order_date__month__lte"] = map(int, request.GET["end_month"].split("-"))
+
+"""
+
+    if "day_range" in search_conditions:
+        view_code += """    if request.GET.get("start_date") and request.GET.get("end_date"):
+        filters["order_date__range"] = [request.GET["start_date"], request.GET["end_date"]]
+
+"""
+
+    if "customer_id" in search_conditions:
+        view_code += """    if request.GET.get("customer_id"):
+        filters["customer_id"] = request.GET["customer_id"]
+
+"""
+
+    view_code += f"""    data = {table['name']}.objects.filter(**filters)
+    return render(request, "{table_name}/list.html", {{"data": data}})
+"""
+
+    with open(f"{VIEW_DIR}/{table_name}.py", "w", encoding="utf-8") as f:
+        f.write(view_code)
+
+    # --- URLパターンを保存 ---
+    url_patterns.append(f'    path("{table_name}/list/", {table_name}_list, name="{table_name}_list"),')
+
+# --- urls.py の作成 ---
+urls_code = """from django.urls import path
+"""
+
+for table in config["tables"]:
+    urls_code += f"from .views.{table['name'].lower()} import {table['name'].lower()}_list\n"
+
+urls_code += "\nurlpatterns = [\n"
+urls_code += "\n".join(url_patterns)
+urls_code += "\n]\n"
+
+with open(URLS_PATH, "w", encoding="utf-8") as f:
+    f.write(urls_code)
+
+print("Django のテンプレート・ビュー・URL を自動生成しました")
