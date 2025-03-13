@@ -1,0 +1,27 @@
+<h2>販売履歴一覧</h2>
+<p>検索範囲: {{ start_date }} 〜 {{ end_date }}</p>
+
+<table border="1">
+    <tr>
+        <th>販売経路</th>
+        <th>商品</th>
+        <th>モデル</th>
+        {% for year, month in months %}
+            <th>{{ year }}年{{ month }}月</th>
+        {% endfor %}
+    </tr>
+    {% for item in data %}
+    <tr>
+        <td>{{ item.channel }}</td>
+        <td>{{ item.product }}</td>
+        <td>{{ item.model }}</td>
+        {% for quantity in item.monthly_data %}
+            <td>{{ quantity }}</td>
+        {% endfor %}
+    </tr>
+    {% empty %}
+    {% with colspan_value=3|add:months|length %}
+    <td colspan="{{ colspan_value }}">データがありません</td>
+    {% endwith %}
+    {% endfor %}
+</table>

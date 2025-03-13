@@ -1,0 +1,20 @@
+tables:
+  - name: "SalesRecord"
+    title: "販売履歴"
+    search_conditions:
+      - type: "month_range"  # 月範囲（YYYY-MM）
+      - type: "day_range"    # 日範囲（YYYY-MM-DD）
+      - type: "customer_id"  # 顧客番号検索
+    columns:
+      - field: "channel"
+        title: "販売経路"
+      - field: "product"
+        title: "商品"
+      - field: "model"
+        title: "モデル"
+      - field: "purchase_date"
+        title: "購入日"
+      - field: "customer_id"
+        title: "顧客番号"
+      - field: "quantity"
+        title: "購入数"
