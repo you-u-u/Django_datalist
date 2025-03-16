@@ -55,15 +55,15 @@ for table in config["tables"]:
 """
 
     for column in columns:
-        list_html += f"            <th>{column['title']}</th>\n"
+      list_html += f"            <th>{column['title']}</th>\n"
 
-    list_html += "        </tr>\n    </thead>\n    <tbody>\n        {% for row in data %}\n        <tr>\n"
+      list_html += "        </tr>\n    </thead>\n    <tbody>\n        {% for row in data %}\n        <tr>\n"
 
     for column in columns:
-        list_html += f"            <td>{{{{ row.{column['field']} }}}}</td>\n"
+      list_html += f"            <td>{{{{ row.{column['field']} }}}}</td>\n"
 
-    list_html += """        </tr>
-        {% endfor %}
+      list_html += """        </tr>
+    {% endfor %}
     </tbody>
 </table>
 """
