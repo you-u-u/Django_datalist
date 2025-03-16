@@ -1,8 +1,8 @@
 import yaml
 import os
 
-CONFIG_PATH = "config.yaml"
-APP_NAME = "your_app"  # Djangoアプリ名
+CONFIG_PATH = "/home/yuka/Projects/test/django_datalist/myproject/config/config.yaml"
+APP_NAME = "listapp"
 TEMPLATE_DIR = f"{APP_NAME}/templates"
 VIEW_DIR = f"{APP_NAME}/views"
 URLS_PATH = f"{APP_NAME}/urls.py"
@@ -27,18 +27,17 @@ for table in config["tables"]:
 <form action="/{table_name}/list/" method="GET">
 """
 
-    if "month_range" in search_conditions:
-        search_html += """<label>開始月: <input type="month" name="start_month"></label>
+    for condition in search_conditions:
+        if condition["type"] == "month_range":
+            search_html += """<label>開始月: <input type="month" name="start_month"></label>
 <label>終了月: <input type="month" name="end_month"></label>
 """
-
-    if "day_range" in search_conditions:
-        search_html += """<label>開始日: <input type="date" name="start_date"></label>
+        elif condition["type"] == "day_range":
+            search_html += """<label>開始日: <input type="date" name="start_date"></label>
 <label>終了日: <input type="date" name="end_date"></label>
 """
-
-    if "customer_id" in search_conditions:
-        search_html += """<label>顧客番号: <input type="text" name="customer_id"></label>
+        elif condition["type"] == "customer_id":
+            search_html += """<label>顧客番号: <input type="text" name="customer_id"></label>
 """
 
     search_html += """<button type="submit">検索</button>
@@ -81,27 +80,27 @@ def {table_name}_list(request):
 
 """
 
-    if "month_range" in search_conditions:
-        view_code += """    if request.GET.get("start_month") and request.GET.get("end_month"):
+    for condition in search_conditions:
+        if condition["type"] == "month_range":
+            view_code += """    if request.GET.get("start_month") and request.GET.get("end_month"):
         filters["order_date__year__gte"], filters["order_date__month__gte"] = map(int, request.GET["start_month"].split("-"))
         filters["order_date__year__lte"], filters["order_date__month__lte"] = map(int, request.GET["end_month"].split("-"))
 
 """
-
-    if "day_range" in search_conditions:
-        view_code += """    if request.GET.get("start_date") and request.GET.get("end_date"):
+        elif condition["type"] == "day_range":
+            view_code += """    if request.GET.get("start_date") and request.GET.get("end_date"):
         filters["order_date__range"] = [request.GET["start_date"], request.GET["end_date"]]
 
 """
-
-    if "customer_id" in search_conditions:
-        view_code += """    if request.GET.get("customer_id"):
+        elif condition["type"] == "customer_id":
+            view_code += """    if request.GET.get("customer_id"):
         filters["customer_id"] = request.GET["customer_id"]
 
 """
 
     view_code += f"""    data = {table['name']}.objects.filter(**filters)
     return render(request, "{table_name}/list.html", {{"data": data}})
+
 """
 
     with open(f"{VIEW_DIR}/{table_name}.py", "w", encoding="utf-8") as f:

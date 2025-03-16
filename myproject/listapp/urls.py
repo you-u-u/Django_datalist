@@ -4,4 +4,6 @@ from .views import salesrecord_search, salesrecord_list
 urlpatterns = [
     path('search/', salesrecord_search, name='salesrecord_search'),
     path('list/', salesrecord_list, name='salesrecord_list'),
+    path("salesrecord/list/", salesrecord_list, name="salesrecord_list"),
+
 ]
