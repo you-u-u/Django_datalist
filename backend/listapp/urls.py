@@ -1,6 +1,6 @@
 from django.urls import path, include
 from . import views
-from .views import SalesByProductView, SalesRecordList, sales_record_list
+from .views import SalesByProductView, SalesRecordList, SalesRecordListView
 #from .views import salesrecord_search, salesrecord_list
 #from rest_framework.routers import DefaultRouter
 
@@ -14,5 +14,5 @@ urlpatterns = [
     path('search/', SalesByProductView.as_view(), name='salesrecord_search'),
     path('list/', SalesRecordList.as_view(), name='list'),
 #path('list/',salesrecord, name='salesrecord_list'), 
-    path('sales/', sales_record_list, name='sales_list'),
+    path('sales/', SalesRecordListView.as_view(), name='sales_list'),
 ]

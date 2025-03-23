@@ -42,41 +42,52 @@ class SalesRecordList(ListView):
         return context
 
 
-from django.shortcuts import render
+from django.views.generic import ListView
+from django.db.models import Q
 from .models import SalesRecord
 from .forms import SalesRecordSearchForm
-from django.db.models import Q
 
-def sales_record_list(request):
-    form = SalesRecordSearchForm(request.GET)  # フォームの値を取得
-    records = SalesRecord.objects.all()  # 初期クエリセット
+class SalesRecordListView(ListView):
+    model = SalesRecord  # どのモデルを使うか指定
+    template_name = "listapp/sales_record_list.html"  # 使用するテンプレート
+    context_object_name = "records"  # テンプレートで使う変数名
+    
+    def get_queryset(self):
+        """データのフィルタリング処理"""
+        queryset = super().get_queryset()  # `SalesRecord.objects.all()` と同じ
+        form = SalesRecordSearchForm(self.request.GET)  # フォームの値を取得
 
-    if form.is_valid():
-        start_date = form.cleaned_data.get("start_date")
-        end_date = form.cleaned_data.get("end_date")
-        category = form.cleaned_data.get("category")
-        search = form.cleaned_data.get("search")
+        if form.is_valid():  # フォームが有効な場合のみ検索実行
+            start_date = form.cleaned_data.get("start_date")
+            end_date = form.cleaned_data.get("end_date")
+            category = form.cleaned_data.get("category")
+            search = form.cleaned_data.get("search")
 
-        # 日付範囲フィルタ
-        if start_date:
-            records = records.filter(purchase_date__gte=start_date)
-        if end_date:
-            records = records.filter(purchase_date__lte=end_date)
+            # 日付フィルタ
+            if start_date:
+                queryset = queryset.filter(purchase_date__gte=start_date)
+            if end_date:
+                queryset = queryset.filter(purchase_date__lte=end_date)
 
-        # 区分フィルタ
-        if category:
-            records = records.filter(category=category)
+            # 区分フィルタ
+            if category:
+                queryset = queryset.filter(category=category)
 
-        # あいまい検索
-        if search:
-            records = records.filter(
-                Q(product__icontains=search) |
-                Q(model__icontains=search) |
-                Q(channel__icontains=search)
-            )
+            # あいまい検索
+            if search:
+                queryset = queryset.filter(
+                    Q(product__icontains=search) |
+                    Q(model__icontains=search) |
+                    Q(channel__icontains=search)
+                )
 
-    return render(request, "listapp/sales_record_list.html", {"form": form, "records": records})
+        return queryset  # フィルタリング後のデータを返す
 
+    def get_context_data(self, **kwargs):
+        """テンプレートに渡すデータ"""
+        context = super().get_context_data(**kwargs)
+        context["form"] = SalesRecordSearchForm(self.request.GET)  # フォームを渡す
+        return context
 
 
 
