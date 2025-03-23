@@ -9,12 +9,17 @@ COLUMNS = ["channel", "product", "model", "purchase_date", "quantity", "category
 class Top(TemplateView):
     template_name = "top.html"
     
-
-
 class SalesByProductView(View):
     def get(self, request):
         context = fetch_sales_data(request, model_name="SalesRecord", date_field="purchase_date", agg_field="quantity", columns=COLUMNS)
         return render(request, "listapp/sales_table.html", context)
+
+class SalesList(ListView):
+    template_name = "list/sales_list.html"
+    model = SalesRecord
+
+    
+
 
 class SalesRecordList(ListView):
     template_name = "listapp/list.html"
@@ -35,6 +40,44 @@ class SalesRecordList(ListView):
         context = super().get_context_data(**kwargs)
         context.update(get_list_filters(self.request, model_name="SalesRecord", date_field="purchase_date", columns=COLUMNS))
         return context
+
+
+from django.shortcuts import render
+from .models import SalesRecord
+from .forms import SalesRecordSearchForm
+from django.db.models import Q
+
+def sales_record_list(request):
+    form = SalesRecordSearchForm(request.GET)  # フォームの値を取得
+    records = SalesRecord.objects.all()  # 初期クエリセット
+
+    if form.is_valid():
+        start_date = form.cleaned_data.get("start_date")
+        end_date = form.cleaned_data.get("end_date")
+        category = form.cleaned_data.get("category")
+        search = form.cleaned_data.get("search")
+
+        # 日付範囲フィルタ
+        if start_date:
+            records = records.filter(purchase_date__gte=start_date)
+        if end_date:
+            records = records.filter(purchase_date__lte=end_date)
+
+        # 区分フィルタ
+        if category:
+            records = records.filter(category=category)
+
+        # あいまい検索
+        if search:
+            records = records.filter(
+                Q(product__icontains=search) |
+                Q(model__icontains=search) |
+                Q(channel__icontains=search)
+            )
+
+    return render(request, "listapp/sales_record_list.html", {"form": form, "records": records})
+
+
 
 
 # from django.shortcuts import render
