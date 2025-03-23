@@ -1,0 +1,112 @@
+<!-- {% load custom_filters %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>売上データ検索</title>
+</head>
+<body>
+    <h2>売上データ検索</h2>
+    <form method="get">
+        {{ form.as_p }}
+        <button type="submit">検索</button>
+    </form>
+    <p>{{ data }}</p>
+    {% if table_data %}
+        <h3>検索結果</h3>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>商品名</th>
+                    <th>型番</th>
+                    {% for date in date_range %}
+                        <th>{{ date }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in table_data %}
+                    <tr>
+                        <td>{{ row.name }}</td>
+                        <td>{{ row.model }}</td>
+                        {% for date in date_range %}
+                            <td>{{ row|get_item:date }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</body>
+</html> -->
+
+{% load custom_filters %}  <!-- カスタムフィルタを読み込み -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>売上データ検索</title>
+</head>
+<body>
+    <h2>売上データ検索</h2>
+
+    <!-- 検索フォーム -->
+    <form method="get">
+        <label>集計単位:</label>
+        {{ form.period }}
+        <br>
+
+        <label>開始日:</label>
+        {{ form.start_date }}
+        <br>
+
+        <label>終了日:</label>
+        {{ form.end_date }}
+        <br>
+
+        <label>区分:</label>
+        {{ form.category }}
+        <br>
+
+        <label>キーワード:</label>
+        {{ form.keyword }}
+        <br>
+
+        <button type="submit">検索</button>
+    </form>
+
+    <hr>
+
+    {% if table_data %}
+        <h3>検索結果</h3>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>販売経路</th>
+                    <th>商品名</th>
+                    <th>型番</th>
+                    {% for date in date_range %}
+                        <th>{{ date }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in table_data %}
+                    <tr>
+                        <td>{{ row.channel }}</td>
+                        <td>{{ row.name }}</td>
+                        <td>{{ row.model }}</td>
+                        {% for date in date_range %}
+                            <td>{{ row|get_item:date }}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>検索結果がありません。</p>
+    {% endif %}
+
+    <button><a href="/listapp/">戻る</a></button>
+</body>
+</html>

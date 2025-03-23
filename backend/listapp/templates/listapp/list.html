@@ -1,0 +1,57 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'listapp/style.css' %}">
+
+<h2>月次販売履歴 - 一覧今使っている</h2>
+    <form method="get">
+        <!-- Hidden inputで period を "day" に固定 -->
+        <input type="hidden" name="period" value="day">
+
+        <label>開始日:</label>
+        {{ form.start_date }}
+        <br>
+
+        <label>終了日:</label>
+        {{ form.end_date }}
+        <br>
+
+        <label>区分:</label>
+        {{ form.category }}
+        <br>
+
+        <label>キーワード:</label>
+        {{ form.keyword }}
+        <br>
+
+        <button type="submit">検索</button>
+    </form>
+
+    <hr>
+{% if object_list %}
+    <h3>検索結果</h3>
+<table border="1">
+    <thead>
+        <tr>
+            <th>販売経路</th>
+            <th>商品</th>
+            <th>モデル</th>
+            <th>購入日</th>
+            <th>購入数</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in object_list %}
+        <tr>
+            <td>{{ row.channel }}</td>
+            <td>{{ row.product }}</td>
+            <td>{{ row.model }}</td>
+            <td>{{ row.purchase_date }}</td>
+            <td>{{ row.quantity }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+    <p>検索結果がありません</p>
+{% endif %}
+<button><a href="/listapp/">戻る</a></button>
