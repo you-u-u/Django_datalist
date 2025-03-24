@@ -3,11 +3,15 @@ from django.views import View
 from django.views.generic import ListView, TemplateView
 from .models import SalesRecord
 from .utils import fetch_sales_data, get_list_filters
+from django.db.models import Q
+from .serializers import SalesRecordSerializer
+from .forms import SalesRecordSearchForm
+from rest_framework.generics import ListAPIView
 
 COLUMNS = ["channel", "product", "model", "purchase_date", "quantity", "category"]  # 検索対象カラム
 
 class Top(TemplateView):
-    template_name = "top.html"
+    template_name = "listapp/top.html"
     
 class SalesByProductView(View):
     def get(self, request):
@@ -15,12 +19,10 @@ class SalesByProductView(View):
         return render(request, "listapp/sales_table.html", context)
 
 class SalesList(ListView):
-    template_name = "list/sales_list.html"
+    template_name = "listapp/sales_list.html"
     model = SalesRecord
 
     
-
-
 class SalesRecordList(ListView):
     template_name = "listapp/list.html"
     model = SalesRecord
@@ -41,53 +43,60 @@ class SalesRecordList(ListView):
         context.update(get_list_filters(self.request, model_name="SalesRecord", date_field="purchase_date", columns=COLUMNS))
         return context
 
+# APIように変更
+# class SalesRecordListView(ListView):
+    # model = SalesRecord  # どのモデルを使うか指定
+    # template_name = "listapp/sales_record_list.html"  # 使用するテンプレート
+    # context_object_name = "records"  # テンプレートで使う変数名
+class SalesRecordListAPI(ListAPIView):
+    queryset = SalesRecord.objects.all()
+    serializer_class = SalesRecordSerializer
 
-from django.views.generic import ListView
-from django.db.models import Q
-from .models import SalesRecord
-from .forms import SalesRecordSearchForm
+    # api用に変更
+    # def get_queryset(self):
+    #     """データのフィルタリング処理"""
+    #     queryset = super().get_queryset()  # `SalesRecord.objects.all()` と同じ
+    #     form = SalesRecordSearchForm(self.request.GET)  # フォームの値を取得
 
-class SalesRecordListView(ListView):
-    model = SalesRecord  # どのモデルを使うか指定
-    template_name = "listapp/sales_record_list.html"  # 使用するテンプレート
-    context_object_name = "records"  # テンプレートで使う変数名
-    
     def get_queryset(self):
-        """データのフィルタリング処理"""
-        queryset = super().get_queryset()  # `SalesRecord.objects.all()` と同じ
-        form = SalesRecordSearchForm(self.request.GET)  # フォームの値を取得
+        queryset = super().get_queryset()
+        start_date = self.request.GET.get("start_date")
+        end_date = self.request.GET.get("end_date")
+        category = self.request.GET.get("category")
+        search = self.request.GET.get("search")
 
-        if form.is_valid():  # フォームが有効な場合のみ検索実行
-            start_date = form.cleaned_data.get("start_date")
-            end_date = form.cleaned_data.get("end_date")
-            category = form.cleaned_data.get("category")
-            search = form.cleaned_data.get("search")
+        # if form.is_valid():  # フォームが有効な場合のみ検索実行
+        #     start_date = form.cleaned_data.get("start_date")
+        #     end_date = form.cleaned_data.get("end_date")
+        #     category = form.cleaned_data.get("category")
+        #     search = form.cleaned_data.get("search")
 
-            # 日付フィルタ
-            if start_date:
-                queryset = queryset.filter(purchase_date__gte=start_date)
-            if end_date:
-                queryset = queryset.filter(purchase_date__lte=end_date)
+        # 日付フィルタ
+        if start_date:
+            queryset = queryset.filter(purchase_date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(purchase_date__lte=end_date)
 
-            # 区分フィルタ
-            if category:
-                queryset = queryset.filter(category=category)
+        # 区分フィルタ
+        if category:
+            queryset = queryset.filter(category=category)
 
-            # あいまい検索
-            if search:
-                queryset = queryset.filter(
-                    Q(product__icontains=search) |
-                    Q(model__icontains=search) |
-                    Q(channel__icontains=search)
-                )
+        # あいまい検索
+        if search:
+            queryset = queryset.filter(
+                Q(product__icontains=search) |
+                Q(model__icontains=search) |
+                Q(channel__icontains=search)
+            )
 
         return queryset  # フィルタリング後のデータを返す
 
-    def get_context_data(self, **kwargs):
-        """テンプレートに渡すデータ"""
-        context = super().get_context_data(**kwargs)
-        context["form"] = SalesRecordSearchForm(self.request.GET)  # フォームを渡す
-        return context
+    # API用に変更
+    # def get_context_data(self, **kwargs):
+    #     """テンプレートに渡すデータ"""
+    #     context = super().get_context_data(**kwargs)
+    #     context["form"] = SalesRecordSearchForm(self.request.GET)  # フォームを渡す
+    #     return context
 
 
 

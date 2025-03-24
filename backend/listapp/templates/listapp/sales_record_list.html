@@ -1,25 +1,35 @@
+<p>検索条件</p>
 <form method="get">
-  {{ form.as_p }}
+  <label>検索範囲：</label>
+    {{ form.start_date }}～ {{ form.end_date }}
+  <br>
+  <label>区分：</label>
+    {{ form.category }}
+  <br>
+  <label>キーワード：</label>
+    {{ form.keyword }}
+  <br>
   <button type="submit">検索</button>
 </form>
-
-<table border="1">
-  <tr>
-      <th>販売経路</th>
-      <th>商品</th>
-      <th>モデル</th>
-      <th>区分</th>
-      <th>購入日</th>
-      <th>購入数</th>
-  </tr>
-  {% for record in records %}
-  <tr>
-      <td>{{ record.channel }}</td>
-      <td>{{ record.product }}</td>
-      <td>{{ record.model }}</td>
-      <td>{{ record.get_category_display }}</td>
-      <td>{{ record.purchase_date }}</td>
-      <td>{{ record.quantity }}</td>
-  </tr>
-  {% endfor %}
-</table>
+{% if records %}
+  <table border="1">
+    <tr>
+        <th>販売経路</th>
+        <th>商品</th>
+        <th>モデル</th>
+        <th>購入日</th>
+        <th>購入数</th>
+    </tr>
+    {% for record in records %}
+    <tr>
+        <td>{{ record.channel }}</td>
+        <td>{{ record.product }}</td>
+        <td>{{ record.model }}</td>
+        <td>{{ record.purchase_date }}</td>
+        <td>{{ record.quantity }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+{% else %}
+  <p>検索結果がありません</p>
+{% endif %}
