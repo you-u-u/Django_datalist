@@ -231,6 +231,7 @@ from collections import defaultdict
 import pandas as pd
 from .forms import SalesFilterForm
 
+# 集計をするための検索条件
 def get_search_filters(request, model_name, date_field, columns):
     """ 検索フォームのデータを取得し、フィルタ条件を作成 """
     form = SalesFilterForm(request.GET)
@@ -337,3 +338,39 @@ def get_list_filters(request, model_name, date_field, columns):
     """ 検索フォームのデータを取得し、フィルタ条件を作成（リスト表示用） """
     filters = get_search_filters(request, model_name, date_field, columns)
     return {"form": filters["form"], "filter_conditions": filters["filter_conditions"], "keyword_filter": filters["keyword_filter"]}
+
+
+# 汎用フィルタ
+
+def apply_filters(queryset, params, search_fields, date_field=""):
+    """
+    クエリセットに検索フィルタを適用する汎用関数
+    - queryset: Djangoモデルのクエリセット（例: SalesRecord.objects.all()）
+    - params: GETパラメータ（request.GET を想定）
+    - search_fields: あいまい検索の対象フィールドリスト（例: ["product", "model"]）
+    - date_field: 日付フィルタ用のフィールド（例: "purchase_date"）
+    """
+    
+    # あいまい検索（複数のフィールドで検索可能）
+    search_query = params.get("search", "")
+    if search_query:
+        q_objects = Q()
+        for field in search_fields:
+            q_objects |= Q(**{f"{field}__icontains": search_query})  # OR 条件
+        queryset = queryset.filter(q_objects)
+
+    # 日付範囲フィルタ
+    if date_field:
+        start_date = params.get("start_date")
+        end_date = params.get("end_date")
+        if start_date:
+            queryset = queryset.filter(**{f"{date_field}__gte": start_date})
+        if end_date:
+            queryset = queryset.filter(**{f"{date_field}__lte": end_date})
+
+    # 区分（カテゴリ）フィルタ
+    category = params.get("category")
+    if category:
+        queryset = queryset.filter(category=category)
+
+    return queryset
