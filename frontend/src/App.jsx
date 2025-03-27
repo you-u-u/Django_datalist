@@ -1,11 +1,11 @@
 import React from "react";
-import SalesRecordList from "./components/SalesRecordList";
+import Sales from "./pages/Sales";
 
 function App() {
   return (
     <div>
       <h1>販売記録システム</h1>
-      <SalesRecordList />
+      <Sales />
     </div>
   );
 }
