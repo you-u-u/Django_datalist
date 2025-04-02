@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>検索ページ</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'JS/search.js' %}"></script>
+</head>
+<body>
+    <p>じぇいくえりで検索条件</p>
+    <form id="search-form">
+        <label>検索範囲：</label>
+        <input type="date" name="start_date" id="start_date"> ～
+        <input type="date" name="end_date" id="end_date">
+        <br>
+        <label>区分：</label>
+        <select name="category" id="category">
+            <option value="">全て</option>
+            <option value="PC">PC</option>
+            <option value="se">SE製品</option>
+        </select>
+        <br>
+        <label>キーワード：</label>
+        <input type="text" name="keyword" id="keyword">
+        <br>
+        <button type="submit">検索</button>
+    </form>
+
+    <div id="results">
+        <p>検索結果がありません</p>
+    </div>
+</body>
+</html>

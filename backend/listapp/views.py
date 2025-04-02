@@ -8,6 +8,8 @@ from .serializers import SalesRecordSerializer
 #from .forms import SalesRecordSearchForm
 from rest_framework.generics import ListAPIView
 from .utils import apply_filters
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 COLUMNS = ["channel", "product", "model", "purchase_date", "quantity", "category"]  # 検索対象カラム
 
@@ -23,20 +25,46 @@ class SalesList(ListView):
     template_name = "listapp/sales_list.html"
     model = SalesRecord
 
+def search_page(request):
+    return render(request, 'listapp/search.html')
 
 # 下記を上記に変更
+class RecordSearchAPI(APIView):
+    def get(self, request, format=None):
+        start_date = request.GET.get('start_date', '')
+        end_date = request.GET.get('end_date', '')
+        category = request.GET.get('category', '')
+        keyword = request.GET.get('keyword', '')
 
-class SalesRecordListAPI(ListAPIView):
-    serializer_class = SalesRecordSerializer
+        records = SalesRecord.objects.all()
 
-    def get_queryset(self):
-        queryset = SalesRecord.objects.all()
-        return apply_filters(
-            queryset,
-            self.request.GET,  # ここで request を取得
-            search_fields=["product", "model", "channel"],
-            date_field="purchase_date"
-        )
+        if start_date:
+            records = records.filter(purchase_date__gte=start_date)
+        
+        if end_date:
+            records = records.filter(purchase_date__lte=end_date)
+
+        if category:
+            records = records.filter(category=category)
+
+        if keyword:
+            records = records.filter(product__icontains=keyword)
+
+        serializer = SalesRecordSerializer(records, many=True)
+        return Response({"results": serializer.data})
+
+
+# class SalesRecordListAPI(ListAPIView):
+#     serializer_class = SalesRecordSerializer
+
+#     def get_queryset(self):
+#         queryset = SalesRecord.objects.all()
+#         return apply_filters(
+#             queryset,
+#             self.request.GET,  # ここで request を取得
+#             search_fields=["product", "model", "channel"],
+#             date_field="purchase_date"
+#         )
 
 # class SalesRecordList(ListView):
 #     template_name = "listapp/list.html"
